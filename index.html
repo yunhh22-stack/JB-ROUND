@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>JB ROUND LIVE</title>
+
+<style>
+body {
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  background:#0b1220;
+  color:#fff;
+}
+
+/* 상단 */
+.header {
+  position:sticky;
+  top:0;
+  background:linear-gradient(90deg,#020617,#0f172a);
+  padding:12px;
+  text-align:center;
+}
+
+.players {
+  display:flex;
+  gap:8px;
+  margin-top:10px;
+}
+
+.player {
+  flex:1;
+  padding:10px;
+  border-radius:12px;
+  background:#1e293b;
+}
+
+.player.active {
+  background:#22c55e;
+  color:#000;
+  font-weight:bold;
+}
+
+.total {
+  font-size:36px;
+  margin-top:10px;
+  font-weight:800;
+}
+
+/* 카드 */
+.container {
+  padding:12px;
+}
+
+.card {
+  background:#111827;
+  border-radius:16px;
+  padding:12px;
+  margin-bottom:12px;
+}
+
+.label {
+  margin-bottom:8px;
+  color:#94a3b8;
+}
+
+/* 버튼 */
+.btn-group {
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+
+.btn {
+  flex:1;
+  min-width:36px;
+  padding:8px;
+  border:none;
+  border-radius:8px;
+  background:#1e293b;
+  color:#fff;
+}
+
+.btn.active {
+  background:#22c55e;
+  color:#000;
+  font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <div class="players" id="players"></div>
+  <div class="total" id="total">0</div>
+</div>
+
+<div class="container" id="controls"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAI0fh14tmNc0y9HcAkQ34l0Z_1BFbpiOw",
+  authDomain: "jb-roun.firebaseapp.com",
+  projectId: "jb-roun",
+  storageBucket: "jb-roun.appspot.com",
+  messagingSenderId: "342362716882",
+  appId: "1:342362716882:web:5f2ae86fa23b4eef3f4b0b"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const ref = doc(db, "game", "live");
+
+const players = ["윤상연","박상현","이선영","원미진"];
+
+let state = {
+  current:0,
+  scores: players.map(()=>({
+    att:[0,0,0,0,0],
+    extra:30,
+    eagle:0,
+    birdie:0
+  }))
+};
+
+function save(){
+  setDoc(ref,state);
+}
+
+onSnapshot(ref,(snap)=>{
+  if(snap.exists()){
+    state = snap.data();
+    render();
+  }
+});
+
+function render(){
+
+  /* 선수 */
+  const pEl=document.getElementById("players");
+  pEl.innerHTML="";
+  players.forEach((p,i)=>{
+    const el=document.createElement("div");
+    el.className="player"+(i===state.current?" active":"");
+    el.innerText=p;
+    el.onclick=()=>{
+      state.current=i;
+      save();
+    };
+    pEl.appendChild(el);
+  });
+
+  const d = state.scores[state.current];
+
+  /* 총점 */
+  const total =
+    d.att.reduce((a,b)=>a+b,0) +
+    d.extra +
+    d.eagle +
+    d.birdie;
+
+  document.getElementById("total").innerText = total;
+
+  /* 컨트롤 */
+  const c=document.getElementById("controls");
+  c.innerHTML="";
+
+  function section(title){
+    const div=document.createElement("div");
+    div.className="card";
+
+    const t=document.createElement("div");
+    t.className="label";
+    t.innerText=title;
+
+    div.appendChild(t);
+    c.appendChild(div);
+
+    return div;
+  }
+
+  function buttons(parent, value, setter, min, max, step){
+    const wrap=document.createElement("div");
+    wrap.className="btn-group";
+
+    for(let i=min;i<=max;i+=step){
+      const b=document.createElement("button");
+      b.className="btn"+(value===i?" active":"");
+      b.innerText=i;
+      b.onclick=()=>setter(i);
+      wrap.appendChild(b);
+    }
+
+    parent.appendChild(wrap);
+  }
+
+  /* 정성 평가 */
+  const attSection = section("정성 평가 (0~10)");
+  ["매너","인성","패션","인상","말투"].forEach((label,i)=>{
+    const row=document.createElement("div");
+    row.className="label";
+    row.innerText=label;
+    attSection.appendChild(row);
+
+    buttons(attSection, d.att[i], (v)=>{
+      d.att[i]=v;
+      save();
+    }, 0,10,1);
+  });
+
+  /* 정성 점수 */
+  const extraSection = section("정성 점수 (30~50)");
+  buttons(extraSection, d.extra, (v)=>{
+    d.extra=v;
+    save();
+  }, 30,50,5);
+
+  /* 이글 */
+  const eagleSection = section("이글 (0~50)");
+  buttons(eagleSection, d.eagle, (v)=>{
+    d.eagle=v;
+    save();
+  }, 0,50,5);
+
+  /* 버디 */
+  const birdieSection = section("버디 (0~50)");
+  buttons(birdieSection, d.birdie, (v)=>{
+    d.birdie=v;
+    save();
+  }, 0,50,5);
+
+}
+
+render();
+</script>
+
+</body>
+</html>
