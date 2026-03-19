@@ -6,25 +6,32 @@
 <title>JB ROUND 방송 화면</title>
 
 <style>
-body{margin:0;background:#020617;color:#fff;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+body{margin:0;background:#020617;color:#fff;font-family:-apple-system}
+.wrap{padding:30px}
 
-.wrap{padding:20px}
+.title{font-size:32px;text-align:center;margin-bottom:20px}
 
-.title{font-size:28px;text-align:center;margin-bottom:20px}
+/* 순위 */
+.rank{display:flex;justify-content:space-between;align-items:center;font-size:28px;padding:10px 12px;border-radius:10px;margin-bottom:6px;background:#0f172a}
+.rank.first{background:#14532d;color:#22c55e;font-size:34px;font-weight:900}
+.rank .score{font-size:30px;font-weight:800}
 
-.ranking{margin-bottom:30px}
-.rank{display:flex;justify-content:space-between;font-size:28px;padding:8px 0}
-.rank.first{color:#22c55e;font-size:36px;font-weight:800}
+/* 팀 점수 */
+.team{font-size:26px;text-align:center;margin:25px 0;color:#38bdf8}
 
-.team{font-size:24px;text-align:center;margin-bottom:30px;color:#38bdf8}
+/* 현재 선수 */
+.current{text-align:center;margin-top:30px}
+.name{font-size:32px;margin-bottom:10px}
 
-.current{
-  text-align:center;
-  margin-top:30px;
+/* 🔥 핵심: 합산 점수 강조 */
+.score{
+  font-size:140px;
+  font-weight:900;
+  color:#22c55e;
+  text-shadow:0 0 20px rgba(34,197,94,0.6);
 }
 
-.name{font-size:32px;margin-bottom:10px}
-.score{font-size:100px;font-weight:900;color:#22c55e}
+.label{font-size:14px;color:#94a3b8;margin-top:6px}
 
 </style>
 </head>
@@ -34,13 +41,14 @@ body{margin:0;background:#020617;color:#fff;font-family:-apple-system,BlinkMacSy
 <div class="wrap">
   <div class="title">2026 1st JB ROUND</div>
 
-  <div class="ranking" id="ranking"></div>
+  <div id="ranking"></div>
 
   <div class="team" id="team"></div>
 
   <div class="current">
-    <div class="name" id="currentName"></div>
-    <div class="score" id="currentScore">0</div>
+    <div class="name" id="name"></div>
+    <div class="score" id="score">0</div>
+    <div class="label">TOTAL SCORE</div>
   </div>
 </div>
 
@@ -48,53 +56,47 @@ body{margin:0;background:#020617;color:#fff;font-family:-apple-system,BlinkMacSy
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
-const firebaseConfig = {
+const app = initializeApp({
   apiKey: "AIzaSyAI0fh14tmNc0y9HcAkQ34l0Z_1BFbpiOw",
   authDomain: "jb-roun.firebaseapp.com",
-  projectId: "jb-roun",
-  storageBucket: "jb-roun.appspot.com",
-  messagingSenderId: "342362716882",
-  appId: "1:342362716882:web:5f2ae86fa23b4eef3f4b0b"
-};
+  projectId: "jb-roun"
+});
 
-const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const ref = doc(db, "game", "live");
 
 const players = ["윤상연","박상현","이선영","원미진"];
 
-function calcTotal(d){
+function calc(d){
   return d.att.reduce((a,b)=>a+b,0)+d.extra+d.eagle+d.birdie;
 }
 
 onSnapshot(ref,(snap)=>{
   if(!snap.exists()) return;
+  const s = snap.data();
 
-  const state = snap.data();
-
-  const scores = players.map((p,i)=>({
+  const arr = players.map((p,i)=>({
     name:p,
-    score:calcTotal(state.scores[i])
+    score:calc(s.scores[i])
   })).sort((a,b)=>b.score-a.score);
 
-  const rankingEl=document.getElementById("ranking");
-  rankingEl.innerHTML="";
-
-  scores.forEach((r,i)=>{
+  const r=document.getElementById("ranking");
+  r.innerHTML="";
+  arr.forEach((v,i)=>{
     const div=document.createElement("div");
     div.className="rank"+(i===0?" first":"");
-    div.innerHTML=`${i+1}위 ${r.name} <span>${r.score}</span>`;
-    rankingEl.appendChild(div);
+    div.innerHTML=`
+      <div>${i+1}위 ${v.name}</div>
+      <div class="score">${v.score}</div>
+    `;
+    r.appendChild(div);
   });
 
-  const team1 = calcTotal(state.scores[0]) + calcTotal(state.scores[1]);
-  const team2 = calcTotal(state.scores[2]) + calcTotal(state.scores[3]);
+  document.getElementById("team").innerText =
+    `윤상연+박상현 ${calc(s.scores[0])+calc(s.scores[1])}  vs  이선영+원미진 ${calc(s.scores[2])+calc(s.scores[3])}`;
 
-  document.getElementById("team").innerText = `윤상연+박상현 ${team1}  vs  이선영+원미진 ${team2}`;
-
-  const current = state.current;
-  document.getElementById("currentName").innerText = players[current];
-  document.getElementById("currentScore").innerText = calcTotal(state.scores[current]);
+  document.getElementById("name").innerText = players[s.current];
+  document.getElementById("score").innerText = calc(s.scores[s.current]);
 });
 </script>
 
