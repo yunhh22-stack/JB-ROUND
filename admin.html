@@ -1,1 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리자 페이지</title>
 
+<style>
+body {margin:0;background:#0b1220;color:#fff;font-family:sans-serif;padding:20px}
+input,button {
+  width:100%;padding:10px;margin:5px 0;
+  border-radius:8px;border:none;font-size:16px
+}
+button {background:#22c55e;color:#000;font-weight:bold}
+.card {background:#111827;padding:15px;border-radius:12px;margin-bottom:15px}
+h2 {margin-top:0}
+.hidden {display:none}
+</style>
+</head>
+
+<body>
+
+<div id="login">
+  <h2>관리자 로그인</h2>
+  <input type="password" id="pw" placeholder="비밀번호 입력">
+  <button onclick="login()">접속</button>
+</div>
+
+<div id="admin" class="hidden">
+
+  <div class="card">
+    <h2>타이틀 수정</h2>
+    <input id="title">
+    <button onclick="saveConfig()">저장</button>
+  </div>
+
+  <div class="card">
+    <h2>항목 수정</h2>
+    <div id="labels"></div>
+  </div>
+
+  <div class="card">
+    <h2>아이템 문구</h2>
+    <input id="itemText">
+    <button onclick="saveConfig()">저장</button>
+  </div>
+
+  <div class="card">
+    <h2>점수 직접 수정</h2>
+    <div id="scores"></div>
+  </div>
+
+  <div class="card">
+    <button onclick="reset()">전체 초기화</button>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey:"AIzaSyAI0fh14tmNc0y9HcAkQ34l0Z_1BFbpiOw",
+  authDomain:"jb-roun.firebaseapp.com",
+  projectId:"jb-roun"
+});
+
+const db = getFirestore(app);
+const ref = doc(db,"game","live");
+
+const players = ["윤상연","박상현","이선영","원미진"];
+
+let state = {};
+
+window.login = function(){
+  if(document.getElementById("pw").value==="1234"){
+    document.getElementById("login").style.display="none";
+    document.getElementById("admin").classList.remove("hidden");
+  }else alert("비밀번호 틀림");
+};
+
+onSnapshot(ref,(snap)=>{
+  if(!snap.exists()) return;
+  state = snap.data();
+  render();
+});
+
+function save(){ setDoc(ref,state); }
+
+function render(){
+
+  // 타이틀
+  document.getElementById("title").value = state.config?.title || "";
+
+  // 아이템
+  document.getElementById("itemText").value = state.config?.itemText || "";
+
+  // 항목
+  const labelsDiv = document.getElementById("labels");
+  labelsDiv.innerHTML="";
+  (state.config?.labels || []).forEach((l,i)=>{
+    const input=document.createElement("input");
+    input.value=l;
+    input.oninput=(e)=>state.config.labels[i]=e.target.value;
+    labelsDiv.appendChild(input);
+  });
+
+  // 점수
+  const scoreDiv=document.getElementById("scores");
+  scoreDiv.innerHTML="";
+
+  state.scores.forEach((p,i)=>{
+    const box=document.createElement("div");
+    box.className="card";
+    box.innerHTML=`<h3>${players[i]}</h3>`;
+
+    p.att.forEach((v,idx)=>{
+      const input=document.createElement("input");
+      input.type="number";
+      input.value=v;
+      input.oninput=(e)=>{p.att[idx]=+e.target.value;save()};
+      box.appendChild(input);
+    });
+
+    ["extra","eagle","birdie"].forEach(key=>{
+      const input=document.createElement("input");
+      input.type="number";
+      input.value=p[key];
+      input.oninput=(e)=>{p[key]=+e.target.value;save()};
+      box.appendChild(input);
+    });
+
+    scoreDiv.appendChild(box);
+  });
+
+}
+
+window.saveConfig = function(){
+  if(!state.config) state.config={};
+  state.config.title = document.getElementById("title").value;
+  state.config.itemText = document.getElementById("itemText").value;
+  save();
+};
+
+window.reset = function(){
+  state.scores = players.map(()=>({att:[0,0,0,0,0],extra:30,eagle:0,birdie:0}));
+  save();
+};
+
+</script>
+
+</body>
+</html>
