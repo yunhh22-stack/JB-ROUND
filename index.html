@@ -7,28 +7,105 @@
 
 <style>
 body {margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#0b1220;color:#fff}
-.header {position:sticky;top:0;background:linear-gradient(90deg,#020617,#0f172a);padding:12px;text-align:center}
+
+.header {
+  position:sticky;
+  top:0;
+  background:linear-gradient(90deg,#020617,#0f172a);
+  padding:12px;
+  text-align:center;
+}
+
 .players {display:flex;gap:8px;margin-top:10px}
-.player {flex:1;padding:10px;border-radius:12px;background:#1e293b}
-.player.active {background:#22c55e;color:#000;font-weight:bold}
-.total {font-size:36px;margin-top:10px;font-weight:800}
+.player {
+  flex:1;
+  padding:10px;
+  border-radius:12px;
+  background:#1e293b;
+}
+.player.active {
+  background:#22c55e;
+  color:#000;
+  font-weight:bold;
+}
+
+/* 🔥 합산 점수 강조 */
+.total {
+  font-size:48px;
+  margin-top:10px;
+  font-weight:900;
+  color:#22c55e;
+  text-shadow:0 0 15px rgba(34,197,94,0.6);
+}
+
 .container {padding:12px}
-.card {background:#111827;border-radius:16px;padding:12px;margin-bottom:12px;border:1px solid #1e293b}
-.label {margin:6px 0;color:#94a3b8;font-size:13px}
-.sub {color:#64748b;font-size:11px;margin-bottom:6px}
+
+.card {
+  background:#111827;
+  border-radius:16px;
+  padding:12px;
+  margin-bottom:12px;
+  border:1px solid #1e293b;
+}
+
+.label {
+  margin:8px 0;
+  color:#cbd5f5;
+  font-size:14px;
+  font-weight:600;
+}
+
 .btn-group {display:flex;flex-wrap:wrap;gap:6px}
-.btn {flex:1;min-width:36px;padding:8px;border:none;border-radius:8px;background:#1e293b;color:#fff}
-.btn.active {background:#22c55e;color:#000;font-weight:bold}
+
+.btn {
+  flex:1;
+  min-width:36px;
+  padding:8px;
+  border:none;
+  border-radius:8px;
+  background:#1e293b;
+  color:#fff;
+}
+
+.btn.active {
+  background:#22c55e;
+  color:#000;
+  font-weight:bold;
+}
 
 /* 순위 */
-.ranking {background:#020617;padding:10px;border-bottom:1px solid #1e293b}
-.rank-item {display:flex;justify-content:space-between;padding:4px 0}
-.rank-item.first {color:#22c55e;font-weight:bold}
+.ranking {
+  background:#020617;
+  padding:10px;
+  border-bottom:1px solid #1e293b;
+}
+
+.rank-item {
+  display:flex;
+  justify-content:space-between;
+  padding:6px 0;
+}
+
+.rank-item.first {
+  color:#22c55e;
+  font-weight:bold;
+}
 
 /* 팀 점수 */
-.team {background:#164e63;padding:8px;text-align:center;font-weight:bold}
+.team {
+  background:#164e63;
+  padding:10px;
+  text-align:center;
+  font-weight:bold;
+  font-size:18px;
+  color:#67e8f9;
+}
 
-.footer {font-size:12px;color:#94a3b8;margin-top:10px}
+.footer {
+  font-size:12px;
+  color:#94a3b8;
+  margin-top:10px;
+}
 </style>
 </head>
 
@@ -79,6 +156,8 @@ function calcTotal(d){
 }
 
 function render(){
+
+  // 🔥 순위
   const rankingEl=document.getElementById("ranking");
   const ranked = players.map((p,i)=>({name:p,score:calcTotal(state.scores[i])}))
     .sort((a,b)=>b.score-a.score);
@@ -91,11 +170,13 @@ function render(){
     rankingEl.appendChild(div);
   });
 
-  // 팀 점수 (1,2 vs 3,4)
+  // 🔥 팀 점수
   const team1 = calcTotal(state.scores[0]) + calcTotal(state.scores[1]);
   const team2 = calcTotal(state.scores[2]) + calcTotal(state.scores[3]);
-  document.getElementById("team").innerText = `윤상연+박상현 ${team1}  |  이선영+원미진 ${team2}`;
+  document.getElementById("team").innerText =
+    `윤상연+박상현 ${team1}  |  이선영+원미진 ${team2}`;
 
+  // 플레이어 선택
   const pEl=document.getElementById("players");
   pEl.innerHTML="";
   players.forEach((p,i)=>{
@@ -107,7 +188,12 @@ function render(){
   });
 
   const d = state.scores[state.current];
-  document.getElementById("total").innerText = calcTotal(d);
+
+  // 🔥 합산 점수 표시 업그레이드
+  document.getElementById("total").innerHTML = `
+    ${calcTotal(d)}
+    <div style="font-size:12px;color:#94a3b8;">TOTAL</div>
+  `;
 
   const c=document.getElementById("controls");
   c.innerHTML="";
@@ -123,13 +209,6 @@ function render(){
     return div;
   }
 
-  function sub(parent,text){
-    const s=document.createElement("div");
-    s.className="sub";
-    s.innerText=text;
-    parent.appendChild(s);
-  }
-
   function buttons(parent,value,setter,min,max,step){
     const wrap=document.createElement("div");
     wrap.className="btn-group";
@@ -143,19 +222,21 @@ function render(){
     parent.appendChild(wrap);
   }
 
+  // 🔥 한줄 구조 (오류 제거 완료)
   const attSection = section("정성 평가 (0~10)");
+
   [
-    ["매너 (필드 플레이 중 매너)"],
-    ["인성 (동반자&캐디를 대하는 태도)"],
-    ["패션 (착장의 기발함)"],
-    ["인상 (웃는 표정)"],
-    ["말투 (욕설 여부 등)"]
+    "매너 (필드 플레이 중 매너)",
+    "인성 (동반자&캐디를 대하는 태도)",
+    "패션 (착장의 기발함)",
+    "인상 (웃는 표정)",
+    "말투 (욕설 여부 등)"
   ].forEach((item,i)=>{
     const row=document.createElement("div");
     row.className="label";
-    row.innerText=item[0];
+    row.innerText=item;
     attSection.appendChild(row);
-    sub(attSection,item[1]);
+
     buttons(attSection,d.att[i],(v)=>{d.att[i]=v;save()},0,10,1);
   });
 
@@ -169,9 +250,12 @@ function render(){
   buttons(birdieSection,d.birdie,(v)=>{d.birdie=v;save()},0,50,5);
 
   const itemSection = section("구매 가능 아이템 – 각 1만원");
+
   const txt=document.createElement("div");
   txt.className="footer";
-  txt.innerText="멀리건 / 그린 공놔주기 / 컨시드 1m추가 / 시간 1분 추가 / 볼 빼고 치기\n※ 홀인원 시 바로 우승";
+  txt.innerText =
+    "멀리건 / 그린 공놔주기 / 컨시드 1m추가 / 시간 1분 추가 / 볼 빼고 치기\n※ 홀인원 시 바로 우승";
+
   itemSection.appendChild(txt);
 }
 
