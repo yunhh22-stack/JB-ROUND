@@ -145,11 +145,11 @@ function render(){
 
   const attSection = section("정성 평가 (0~10)");
   [
-    ["매너","필드 플레이 중 매너"],
-    ["인성","동반자&캐디를 대하는 태도"],
-    ["패션","착장의 기본함"],
-    ["인상","웃는 표정"],
-    ["말투","욕설 여부 등"]
+    ["매너 (필드 플레이 중 매너)"],
+    ["인성 (동반자&캐디를 대하는 태도)"],
+    ["패션 (착장의 기발함)"],
+    ["인상 (웃는 표정)"],
+    ["말투 (욕설 여부 등)"]
   ].forEach((item,i)=>{
     const row=document.createElement("div");
     row.className="label";
@@ -171,7 +171,7 @@ function render(){
   const itemSection = section("구매 가능 아이템 – 각 1만원");
   const txt=document.createElement("div");
   txt.className="footer";
-  txt.innerText="멀리건 / 공놔주기 / 컨시드 / 시간 추가 / 볼 빼고 치기\n※ 홀인원 시 바로 우승";
+  txt.innerText="멀리건 / 그린 공놔주기 / 컨시드 1m추가 / 시간 1분 추가 / 볼 빼고 치기\n※ 홀인원 시 바로 우승";
   itemSection.appendChild(txt);
 }
 
