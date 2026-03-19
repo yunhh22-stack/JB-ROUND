@@ -6,90 +6,29 @@
 <title>JB ROUND LIVE</title>
 
 <style>
-body {
-  margin:0;
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-  background:#0b1220;
-  color:#fff;
-}
+body {margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#0b1220;color:#fff}
+.header {position:sticky;top:0;background:linear-gradient(90deg,#020617,#0f172a);padding:12px;text-align:center}
+.players {display:flex;gap:8px;margin-top:10px}
+.player {flex:1;padding:10px;border-radius:12px;background:#1e293b}
+.player.active {background:#22c55e;color:#000;font-weight:bold}
+.total {font-size:36px;margin-top:10px;font-weight:800}
+.container {padding:12px}
+.card {background:#111827;border-radius:16px;padding:12px;margin-bottom:12px}
+.label {margin-bottom:8px;color:#94a3b8}
+.btn-group {display:flex;flex-wrap:wrap;gap:6px}
+.btn {flex:1;min-width:36px;padding:8px;border:none;border-radius:8px;background:#1e293b;color:#fff}
+.btn.active {background:#22c55e;color:#000;font-weight:bold}
 
-/* 상단 */
-.header {
-  position:sticky;
-  top:0;
-  background:linear-gradient(90deg,#020617,#0f172a);
-  padding:12px;
-  text-align:center;
-}
-
-.players {
-  display:flex;
-  gap:8px;
-  margin-top:10px;
-}
-
-.player {
-  flex:1;
-  padding:10px;
-  border-radius:12px;
-  background:#1e293b;
-}
-
-.player.active {
-  background:#22c55e;
-  color:#000;
-  font-weight:bold;
-}
-
-.total {
-  font-size:36px;
-  margin-top:10px;
-  font-weight:800;
-}
-
-/* 카드 */
-.container {
-  padding:12px;
-}
-
-.card {
-  background:#111827;
-  border-radius:16px;
-  padding:12px;
-  margin-bottom:12px;
-}
-
-.label {
-  margin-bottom:8px;
-  color:#94a3b8;
-}
-
-/* 버튼 */
-.btn-group {
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-}
-
-.btn {
-  flex:1;
-  min-width:36px;
-  padding:8px;
-  border:none;
-  border-radius:8px;
-  background:#1e293b;
-  color:#fff;
-}
-
-.btn.active {
-  background:#22c55e;
-  color:#000;
-  font-weight:bold;
-}
+/* 순위 */
+.ranking {background:#020617;padding:10px;margin-bottom:10px;border-bottom:1px solid #1e293b}
+.rank-item {display:flex;justify-content:space-between;padding:6px 0}
+.rank-item.first {color:#22c55e;font-weight:bold;font-size:16px}
 </style>
 </head>
 
 <body>
+
+<div class="ranking" id="ranking"></div>
 
 <div class="header">
   <div class="players" id="players"></div>
@@ -119,26 +58,35 @@ const players = ["윤상연","박상현","이선영","원미진"];
 
 let state = {
   current:0,
-  scores: players.map(()=>({
-    att:[0,0,0,0,0],
-    extra:30,
-    eagle:0,
-    birdie:0
-  }))
+  scores: players.map(()=>({att:[0,0,0,0,0],extra:30,eagle:0,birdie:0}))
 };
 
-function save(){
-  setDoc(ref,state);
-}
+function save(){ setDoc(ref,state); }
 
 onSnapshot(ref,(snap)=>{
-  if(snap.exists()){
-    state = snap.data();
-    render();
-  }
+  if(snap.exists()){ state = snap.data(); render(); }
 });
 
+function calcTotal(d){
+  return d.att.reduce((a,b)=>a+b,0)+d.extra+d.eagle+d.birdie;
+}
+
 function render(){
+
+  /* 순위 */
+  const rankingEl=document.getElementById("ranking");
+  const ranked = players.map((p,i)=>({
+    name:p,
+    score:calcTotal(state.scores[i])
+  })).sort((a,b)=>b.score-a.score);
+
+  rankingEl.innerHTML="";
+  ranked.forEach((r,i)=>{
+    const div=document.createElement("div");
+    div.className="rank-item"+(i===0?" first":"");
+    div.innerHTML=`${i+1}위 ${r.name} <span>${r.score}</span>`;
+    rankingEl.appendChild(div);
+  });
 
   /* 선수 */
   const pEl=document.getElementById("players");
@@ -147,46 +95,30 @@ function render(){
     const el=document.createElement("div");
     el.className="player"+(i===state.current?" active":"");
     el.innerText=p;
-    el.onclick=()=>{
-      state.current=i;
-      save();
-    };
+    el.onclick=()=>{ state.current=i; save(); };
     pEl.appendChild(el);
   });
 
   const d = state.scores[state.current];
+  document.getElementById("total").innerText = calcTotal(d);
 
-  /* 총점 */
-  const total =
-    d.att.reduce((a,b)=>a+b,0) +
-    d.extra +
-    d.eagle +
-    d.birdie;
-
-  document.getElementById("total").innerText = total;
-
-  /* 컨트롤 */
   const c=document.getElementById("controls");
   c.innerHTML="";
 
   function section(title){
     const div=document.createElement("div");
     div.className="card";
-
     const t=document.createElement("div");
     t.className="label";
     t.innerText=title;
-
     div.appendChild(t);
     c.appendChild(div);
-
     return div;
   }
 
-  function buttons(parent, value, setter, min, max, step){
+  function buttons(parent,value,setter,min,max,step){
     const wrap=document.createElement("div");
     wrap.className="btn-group";
-
     for(let i=min;i<=max;i+=step){
       const b=document.createElement("button");
       b.className="btn"+(value===i?" active":"");
@@ -194,45 +126,26 @@ function render(){
       b.onclick=()=>setter(i);
       wrap.appendChild(b);
     }
-
     parent.appendChild(wrap);
   }
 
-  /* 정성 평가 */
   const attSection = section("정성 평가 (0~10)");
   ["매너","인성","패션","인상","말투"].forEach((label,i)=>{
     const row=document.createElement("div");
     row.className="label";
     row.innerText=label;
     attSection.appendChild(row);
-
-    buttons(attSection, d.att[i], (v)=>{
-      d.att[i]=v;
-      save();
-    }, 0,10,1);
+    buttons(attSection,d.att[i],(v)=>{d.att[i]=v;save()},0,10,1);
   });
 
-  /* 정성 점수 */
   const extraSection = section("정성 점수 (30~50)");
-  buttons(extraSection, d.extra, (v)=>{
-    d.extra=v;
-    save();
-  }, 30,50,5);
+  buttons(extraSection,d.extra,(v)=>{d.extra=v;save()},30,50,5);
 
-  /* 이글 */
   const eagleSection = section("이글 (0~50)");
-  buttons(eagleSection, d.eagle, (v)=>{
-    d.eagle=v;
-    save();
-  }, 0,50,5);
+  buttons(eagleSection,d.eagle,(v)=>{d.eagle=v;save()},0,50,5);
 
-  /* 버디 */
   const birdieSection = section("버디 (0~50)");
-  buttons(birdieSection, d.birdie, (v)=>{
-    d.birdie=v;
-    save();
-  }, 0,50,5);
-
+  buttons(birdieSection,d.birdie,(v)=>{d.birdie=v;save()},0,50,5);
 }
 
 render();
