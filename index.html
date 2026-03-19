@@ -8,104 +8,50 @@
 <style>
 body {margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#0b1220;color:#fff}
 
-.header {
-  position:sticky;
-  top:0;
-  background:linear-gradient(90deg,#020617,#0f172a);
-  padding:12px;
-  text-align:center;
-}
-
+.header {position:sticky;top:0;background:linear-gradient(90deg,#020617,#0f172a);padding:12px;text-align:center}
 .players {display:flex;gap:8px;margin-top:10px}
-.player {
-  flex:1;
-  padding:10px;
-  border-radius:12px;
-  background:#1e293b;
-}
-.player.active {
-  background:#22c55e;
-  color:#000;
-  font-weight:bold;
-}
+.player {flex:1;padding:10px;border-radius:12px;background:#1e293b}
+.player.active {background:#22c55e;color:#000;font-weight:bold}
 
-/* 🔥 합산 점수 강조 */
 .total {
-  font-size:48px;
+  font-size:52px;
   margin-top:10px;
   font-weight:900;
   color:#22c55e;
-  text-shadow:0 0 15px rgba(34,197,94,0.6);
+  text-shadow:0 0 20px rgba(34,197,94,0.7);
+  transition: transform 0.2s;
 }
 
 .container {padding:12px}
+.card {background:#111827;border-radius:16px;padding:12px;margin-bottom:12px;border:1px solid #1e293b}
 
-.card {
-  background:#111827;
-  border-radius:16px;
-  padding:12px;
-  margin-bottom:12px;
-  border:1px solid #1e293b;
-}
-
-.label {
-  margin:8px 0;
-  color:#cbd5f5;
-  font-size:14px;
-  font-weight:600;
-}
+.label {margin:8px 0;color:#cbd5f5;font-size:14px;font-weight:600}
 
 .btn-group {display:flex;flex-wrap:wrap;gap:6px}
+.btn {flex:1;min-width:36px;padding:8px;border:none;border-radius:8px;background:#1e293b;color:#fff}
+.btn.active {background:#22c55e;color:#000;font-weight:bold}
 
-.btn {
-  flex:1;
-  min-width:36px;
-  padding:8px;
-  border:none;
-  border-radius:8px;
-  background:#1e293b;
-  color:#fff;
-}
+.ranking {background:#020617;padding:10px;border-bottom:1px solid #1e293b}
+.rank-item {display:flex;justify-content:space-between;padding:4px 0}
+.rank-item.first {color:#22c55e;font-weight:bold}
 
-.btn.active {
-  background:#22c55e;
-  color:#000;
-  font-weight:bold;
-}
-
-/* 순위 */
-.ranking {
-  background:#020617;
-  padding:10px;
-  border-bottom:1px solid #1e293b;
-}
-
-.rank-item {
-  display:flex;
-  justify-content:space-between;
-  padding:6px 0;
-}
-
-.rank-item.first {
-  color:#22c55e;
-  font-weight:bold;
-}
-
-/* 팀 점수 */
 .team {
   background:#164e63;
   padding:10px;
   text-align:center;
   font-weight:bold;
-  font-size:30px;
+  font-size:20px;
   color:#67e8f9;
 }
 
+/* 🔥 하단 문구 크게 */
 .footer {
-  font-size:12px;
-  color:#94a3b8;
-  margin-top:10px;
+  font-size:16px;
+  color:#cbd5f5;
+  margin-top:12px;
+  line-height:1.5;
 }
+
 </style>
 </head>
 
@@ -145,6 +91,8 @@ let state = {
   scores: players.map(()=>({att:[0,0,0,0,0],extra:30,eagle:0,birdie:0}))
 };
 
+let prevTotal = 0;
+
 function save(){ setDoc(ref,state); }
 
 onSnapshot(ref,(snap)=>{
@@ -155,9 +103,26 @@ function calcTotal(d){
   return d.att.reduce((a,b)=>a+b,0)+d.extra+d.eagle+d.birdie;
 }
 
+function animateValue(start, end, duration) {
+  const range = end - start;
+  let startTime = null;
+
+  function step(timestamp) {
+    if (!startTime) startTime = timestamp;
+    const progress = Math.min((timestamp - startTime) / duration, 1);
+    const value = Math.floor(start + range * progress);
+    document.getElementById("total").innerHTML = `
+      ${value}
+      <div style="font-size:12px;color:#94a3b8;">TOTAL</div>
+    `;
+    if (progress < 1) requestAnimationFrame(step);
+  }
+
+  requestAnimationFrame(step);
+}
+
 function render(){
 
-  // 🔥 순위
   const rankingEl=document.getElementById("ranking");
   const ranked = players.map((p,i)=>({name:p,score:calcTotal(state.scores[i])}))
     .sort((a,b)=>b.score-a.score);
@@ -170,13 +135,11 @@ function render(){
     rankingEl.appendChild(div);
   });
 
-  // 🔥 팀 점수
   const team1 = calcTotal(state.scores[0]) + calcTotal(state.scores[1]);
   const team2 = calcTotal(state.scores[2]) + calcTotal(state.scores[3]);
   document.getElementById("team").innerText =
     `윤상연+박상현 ${team1}  |  이선영+원미진 ${team2}`;
 
-  // 플레이어 선택
   const pEl=document.getElementById("players");
   pEl.innerHTML="";
   players.forEach((p,i)=>{
@@ -188,12 +151,10 @@ function render(){
   });
 
   const d = state.scores[state.current];
+  const newTotal = calcTotal(d);
 
-  // 🔥 합산 점수 표시 업그레이드
-  document.getElementById("total").innerHTML = `
-    ${calcTotal(d)}
-    <div style="font-size:12px;color:#94a3b8;">TOTAL</div>
-  `;
+  animateValue(prevTotal, newTotal, 300);
+  prevTotal = newTotal;
 
   const c=document.getElementById("controls");
   c.innerHTML="";
@@ -222,9 +183,7 @@ function render(){
     parent.appendChild(wrap);
   }
 
-  // 🔥 한줄 구조 (오류 제거 완료)
   const attSection = section("정성 평가 (0~10)");
-
   [
     "매너 (필드 플레이 중 매너)",
     "인성 (동반자&캐디를 대하는 태도)",
@@ -250,12 +209,9 @@ function render(){
   buttons(birdieSection,d.birdie,(v)=>{d.birdie=v;save()},0,50,5);
 
   const itemSection = section("구매 가능 아이템 – 각 1만원");
-
   const txt=document.createElement("div");
   txt.className="footer";
-  txt.innerText =
-    "멀리건 / 그린 공놔주기 / 컨시드 1m추가 / 시간 1분 추가 / 볼 빼고 치기\n※ 홀인원 시 바로 우승";
-
+  txt.innerText="멀리건 / 그린 공놔주기 / 컨시드 1m추가 / 시간 1분 추가 / 볼 빼고 치기\n※ 홀인원 시 바로 우승";
   itemSection.appendChild(txt);
 }
 
