@@ -1,109 +1,124 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JB ROUND DISPLAY</title>
 
 <style>
 body{
   margin:0;
   font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-  background:linear-gradient(180deg,#020617,#020617 40%,#020617);
+  background:#020617;
   color:#fff;
+  height:100vh;
+  overflow:hidden;
 }
 
-.wrap{padding:20px}
+.wrap{
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  padding:16px;
+  box-sizing:border-box;
+}
 
+/* 타이틀 */
 .title{
   text-align:center;
-  font-size:34px;
-  margin-bottom:20px;
+  font-size:24px;
+  margin-bottom:6px;
   color:#e2e8f0;
 }
 
-/* 팀 카드 */
+/* 팀 점수 */
 .team-wrap{
   display:flex;
-  gap:12px;
-  margin-bottom:20px;
+  gap:10px;
 }
 
 .team-card{
   flex:1;
-  padding:16px;
-  border-radius:16px;
+  padding:12px;
+  border-radius:14px;
   background:#1e293b;
   text-align:center;
-  font-size:22px;
+  font-size:16px;
   font-weight:700;
 }
 
 .team-card.win{
   background:#4ade80;
   color:#000;
-  box-shadow:0 0 25px rgba(74,222,128,0.8);
-  animation:pulse 0.6s ease;
+  box-shadow:0 0 20px rgba(74,222,128,0.8);
+  animation:pulse 0.5s ease;
 }
 
 .team-score{
-  font-size:36px;
-  margin-top:8px;
+  font-size:26px;
+  margin-top:6px;
 }
 
 /* 랭킹 */
+.ranking{
+  flex:1;
+  margin-top:10px;
+}
+
 .rank{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:16px;
-  margin-bottom:10px;
-  border-radius:16px;
+  padding:10px;
+  margin-bottom:6px;
+  border-radius:12px;
   background:#1e293b;
-  font-size:24px;
+  font-size:16px;
 }
 
 .rank.first{
   background:#166534;
   color:#86efac;
-  font-weight:900;
+  font-weight:bold;
 }
 
 .rank-score{
-  font-size:28px;
+  font-size:18px;
   color:#4ade80;
 }
 
 /* 현재 선수 */
 .current{
-  margin-top:40px;
   display:flex;
   justify-content:space-between;
-  align-items:flex-end;
+  align-items:center;
+  margin-top:10px;
 }
 
 .name{
-  font-size:36px;
-}
-
-.score{
-  font-size:140px;
-  font-weight:900;
-  color:#4ade80;
-  text-shadow:0 0 30px rgba(74,222,128,0.9);
+  font-size:20px;
 }
 
 .sub{
+  font-size:12px;
   color:#64748b;
-  font-size:14px;
+  margin-top:4px;
 }
 
+.score{
+  font-size:80px;
+  font-weight:900;
+  color:#4ade80;
+  text-shadow:0 0 20px rgba(74,222,128,0.8);
+}
+
+/* 애니메이션 */
 @keyframes pulse{
   0%{transform:scale(1)}
-  50%{transform:scale(1.08)}
+  50%{transform:scale(1.05)}
   100%{transform:scale(1)}
 }
-
 </style>
 </head>
 
@@ -111,19 +126,21 @@ body{
 
 <div class="wrap">
 
-<div class="title">2026 1st JB ROUND</div>
-
-<div class="team-wrap" id="team"></div>
-
-<div id="ranking"></div>
-
-<div class="current">
   <div>
-    <div class="name" id="name"></div>
-    <div class="sub">TOTAL SCORE</div>
+    <div class="title" id="title">JB ROUND</div>
+
+    <div class="team-wrap" id="team"></div>
+
+    <div class="ranking" id="ranking"></div>
   </div>
-  <div class="score" id="score">0</div>
-</div>
+
+  <div class="current">
+    <div>
+      <div class="name" id="name"></div>
+      <div class="sub">TOTAL SCORE</div>
+    </div>
+    <div class="score" id="score">0</div>
+  </div>
 
 </div>
 
@@ -132,15 +149,15 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/fireba
 import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
 const app = initializeApp({
-  apiKey: "AIzaSyAI0fh14tmNc0y9HcAkQ34l0Z_1BFbpiOw",
-  authDomain: "jb-roun.firebaseapp.com",
-  projectId: "jb-roun"
+  apiKey:"AIzaSyAI0fh14tmNc0y9HcAkQ34l0Z_1BFbpiOw",
+  authDomain:"jb-roun.firebaseapp.com",
+  projectId:"jb-roun"
 });
 
 const db = getFirestore(app);
-const ref = doc(db, "game", "live");
+const ref = doc(db,"game","live");
 
-const players = ["윤상연","박상현","이선영","원미진"];
+const players=["윤상연","박상현","이선영","원미진"];
 
 function calc(d){
   return d.att.reduce((a,b)=>a+b,0)+d.extra+d.eagle+d.birdie;
@@ -148,16 +165,22 @@ function calc(d){
 
 onSnapshot(ref,(snap)=>{
   if(!snap.exists()) return;
+
   const s = snap.data();
 
+  // 타이틀
+  document.getElementById("title").innerText =
+    s.config?.title || "JB ROUND";
+
+  // 점수 계산
   const scores = players.map((p,i)=>({
     name:p,
     score:calc(s.scores[i])
   })).sort((a,b)=>b.score-a.score);
 
+  // 랭킹
   const r=document.getElementById("ranking");
   r.innerHTML="";
-
   scores.forEach((v,i)=>{
     const div=document.createElement("div");
     div.className="rank"+(i===0?" first":"");
@@ -168,6 +191,7 @@ onSnapshot(ref,(snap)=>{
     r.appendChild(div);
   });
 
+  // 팀 점수
   const team1 = calc(s.scores[0]) + calc(s.scores[1]);
   const team2 = calc(s.scores[2]) + calc(s.scores[3]);
 
@@ -190,8 +214,10 @@ onSnapshot(ref,(snap)=>{
     `;
   }
 
+  // 현재 선수
   document.getElementById("name").innerText = players[s.current];
-  document.getElementById("score").innerText = calc(s.scores[s.current]);
+  document.getElementById("score").innerText =
+    calc(s.scores[s.current]);
 });
 </script>
 
