@@ -36,12 +36,26 @@ body {margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 .rank-item.first {color:#22c55e;font-weight:bold}
 
 .team {
-  background:#164e63;
-  padding:10px;
-  text-align:center;
-  font-weight:bold;
-  font-size:20px;
-  color:#67e8f9;
+  display:flex;
+  justify-content:center;
+  gap:20px;
+  padding:14px;
+  font-weight:900;
+  font-size:22px;
+}
+.team span {
+  padding:6px 12px;
+  border-radius:8px;
+}
+.team .win {
+  background:#22c55e;
+  color:#000;
+  font-size:24px;
+  box-shadow:0 0 10px rgba(34,197,94,0.7);
+}
+.team .lose {
+  background:#1e293b;
+  color:#94a3b8;
 }
 
 /* 🔥 하단 문구 크게 */
@@ -137,8 +151,25 @@ function render(){
 
   const team1 = calcTotal(state.scores[0]) + calcTotal(state.scores[1]);
   const team2 = calcTotal(state.scores[2]) + calcTotal(state.scores[3]);
-  document.getElementById("team").innerText =
-    `윤상연+박상현 ${team1}  |  이선영+원미진 ${team2}`;
+  const teamEl = document.getElementById("team");
+
+if(team1 > team2){
+  teamEl.innerHTML = `
+    <span class="win">윤상연+박상현 ${team1}</span>
+    <span class="lose">이선영+원미진 ${team2}</span>
+  `;
+} else if(team2 > team1){
+  teamEl.innerHTML = `
+    <span class="lose">윤상연+박상현 ${team1}</span>
+    <span class="win">이선영+원미진 ${team2}</span>
+  `;
+} else {
+  teamEl.innerHTML = `
+    <span>윤상연+박상현 ${team1}</span>
+    <span>|</span>
+    <span>이선영+원미진 ${team2}</span>
+  `;
+}
 
   const pEl=document.getElementById("players");
   pEl.innerHTML="";
