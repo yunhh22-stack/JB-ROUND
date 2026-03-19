@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>JB ROUND 방송 화면</title>
+
+<style>
+body{margin:0;background:#020617;color:#fff;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+
+.wrap{padding:20px}
+
+.title{font-size:28px;text-align:center;margin-bottom:20px}
+
+.ranking{margin-bottom:30px}
+.rank{display:flex;justify-content:space-between;font-size:28px;padding:8px 0}
+.rank.first{color:#22c55e;font-size:36px;font-weight:800}
+
+.team{font-size:24px;text-align:center;margin-bottom:30px;color:#38bdf8}
+
+.current{
+  text-align:center;
+  margin-top:30px;
+}
+
+.name{font-size:32px;margin-bottom:10px}
+.score{font-size:100px;font-weight:900;color:#22c55e}
+
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+  <div class="title">2026 1st JB ROUND</div>
+
+  <div class="ranking" id="ranking"></div>
+
+  <div class="team" id="team"></div>
+
+  <div class="current">
+    <div class="name" id="currentName"></div>
+    <div class="score" id="currentScore">0</div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAI0fh14tmNc0y9HcAkQ34l0Z_1BFbpiOw",
+  authDomain: "jb-roun.firebaseapp.com",
+  projectId: "jb-roun",
+  storageBucket: "jb-roun.appspot.com",
+  messagingSenderId: "342362716882",
+  appId: "1:342362716882:web:5f2ae86fa23b4eef3f4b0b"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const ref = doc(db, "game", "live");
+
+const players = ["윤상연","박상현","이선영","원미진"];
+
+function calcTotal(d){
+  return d.att.reduce((a,b)=>a+b,0)+d.extra+d.eagle+d.birdie;
+}
+
+onSnapshot(ref,(snap)=>{
+  if(!snap.exists()) return;
+
+  const state = snap.data();
+
+  const scores = players.map((p,i)=>({
+    name:p,
+    score:calcTotal(state.scores[i])
+  })).sort((a,b)=>b.score-a.score);
+
+  const rankingEl=document.getElementById("ranking");
+  rankingEl.innerHTML="";
+
+  scores.forEach((r,i)=>{
+    const div=document.createElement("div");
+    div.className="rank"+(i===0?" first":"");
+    div.innerHTML=`${i+1}위 ${r.name} <span>${r.score}</span>`;
+    rankingEl.appendChild(div);
+  });
+
+  const team1 = calcTotal(state.scores[0]) + calcTotal(state.scores[1]);
+  const team2 = calcTotal(state.scores[2]) + calcTotal(state.scores[3]);
+
+  document.getElementById("team").innerText = `윤상연+박상현 ${team1}  vs  이선영+원미진 ${team2}`;
+
+  const current = state.current;
+  document.getElementById("currentName").innerText = players[current];
+  document.getElementById("currentScore").innerText = calcTotal(state.scores[current]);
+});
+</script>
+
+</body>
+</html>
